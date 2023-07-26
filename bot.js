@@ -39,3 +39,4 @@ client.on(Events.MessageCreate, (message) => {
 });
 
 client.login(TOKEN);
+// hahaha
