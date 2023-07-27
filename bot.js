@@ -54,8 +54,8 @@ const commands = [
         description: "機器人會呼叫你輸入的人",
         options: [
             {
-                name: "username",
-                type: 3,
+                name: "使用者",
+                type: 6,
                 description: "使用者名稱會被呼叫",
                 required: true,
             },
@@ -80,6 +80,8 @@ client.once("ready", () => {
     console.log("Ready!");
 });
 
+let shouldStopCalling = false; // 全局變量，用於跟蹤是否應該停止"呼叫"指令
+
 // 當機器人收到訊息時
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand()) return;
@@ -99,15 +101,22 @@ client.on("interactionCreate", async (interaction) => {
         }
     } else if (commandName === "呼叫") {
         // 呼叫指令
-        const username = interaction.options.getString("username");
-        for (let index = 0; index < 10; index++) {
-            setTimeout(() => {
-                interaction.followUp(`呼叫${username}`);
-            }, 3000 * index); // 每3秒發送一次訊息
+        const user = interaction.options.getUser("使用者"); // 取得輸入的使用者
+        const userId = user.id; // 獲取用戶的ID
+        shouldStopCalling = false; // 重置應該停止呼叫的標記
+        // 每3秒發送一次訊息
+        for (let i = 0; i < 3; i++) {
+            if (shouldStopCalling) break; // 如果應該停止呼叫，則跳出循環
+            if (i === 0) {
+                await interaction.reply(`<@${userId}>`); // 回覆訊息，並標記用戶
+            } else {
+                await interaction.followUp(`<@${userId}>`); // 發送後續訊息，並標記用戶
+            }
+            await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待3秒
         }
     } else if (commandName === "閉嘴") {
         // 閉嘴指令
-        index = 10; // 設定index為10
+        shouldStopCalling = true; // 設定應該停止呼叫的標記
         await interaction.reply("好啦,幹嘛兇人家");
     } else if (commandName === "echo") {
         // echo指令
