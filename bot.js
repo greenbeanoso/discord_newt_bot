@@ -1,41 +1,111 @@
-const { Client, Events, GatewayIntentBits } = require('discord.js');
-var index
-const TOKEN = 'MTEzMTg3NzMyMDY3MjY4MjA1NA.Gysj9Y._9J6fi7lE_18FesYKdQDVIjyVj3etJHXXE-3Kc';
+const { Client, GatewayIntentBits } = require("discord.js");
+const { REST } = require("@discordjs/rest");
+const { Routes } = require("discord-api-types/v9");
+require("dotenv").config();
+
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = "1131877320672682054"; // 請換成你的應用的ID
+
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-  ],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages,
+    ],
 });
-client.on(Events.MessageCreate, (message) => {
-  if (message.author.bot) return;
-  if (message.content == '!說句話'){
-    if (`${message.member.nickname}` != null){
-      message.channel.send(`${message.member.nickname}好帥`);
-    } else {
-      message.channel.send(`${message.member.uesername}好帥`);
-    }
-  }
-  if (message.content[0] == '呼'&& message.content[1] == '叫'&& message.content[2] == ':'){
-    console.log("有人用呼叫")
-    let arr = message.content.split(":")
-    console.log(arr[1])
-    for (index = 0; index < 10; index++) {
-      function sendMessage(msg, arrCopy) {
-        return function() {
-          msg.channel.send('呼叫'+arrCopy[1]);
+// type: 種類對應
+// 1：子指令
+// 2：子指令組
+// 3：字符串
+// 4：整數
+// 5：布爾值
+// 6：用戶
+// 7：通道
+// 8：角色
+// 9：提及
+// 10：數字
+// 11：提及可能的用戶
+
+const commands = [
+    {
+        name: "ping",
+        description: "Replies with Pong!",
+    },
+    {
+        name: "echo",
+        description: "回傳你輸入的內容",
+        options: [
+            {
+                name: "content",
+                type: 3,
+                description: "輸入的內容",
+                required: true,
+            },
+        ],
+    },
+    {
+        name: "說句話",
+        description: "機器人會說你好帥",
+    },
+    {
+        name: "呼叫",
+        description: "機器人會呼叫你輸入的人",
+        options: [
+            {
+                name: "username",
+                type: 3,
+                description: "使用者名稱會被呼叫",
+                required: true,
+            },
+        ],
+    },
+    {
+        name: "閉嘴",
+        description: "機器人會閉嘴",
+    },
+    // 新增指令的格式
+];
+
+const rest = new REST({ version: "9" }).setToken(TOKEN);
+
+(async () => {
+    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+})();
+
+client.once("ready", () => {
+    console.log("Ready!");
+});
+
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isCommand()) return;
+
+    const { commandName } = interaction;
+
+    if (commandName === "ping") {
+        await interaction.reply("Pong!");
+    } else if (commandName === "說句話") {
+        const nickname = interaction.member.nickname;
+        if (nickname != null) {
+            await interaction.reply(`${nickname}好帥`);
+        } else {
+            await interaction.reply(`${interaction.user.username}好帥`);
         }
-      }
-      setTimeout(sendMessage(message, arr),3000*index);
+    } else if (commandName === "呼叫") {
+        const username = interaction.options.getString("username");
+        for (let index = 0; index < 10; index++) {
+            setTimeout(() => {
+                interaction.followUp(`呼叫${username}`);
+            }, 3000 * index);
+        }
+    } else if (commandName === "閉嘴") {
+        index = 10;
+        await interaction.reply("好啦,幹嘛兇人家");
+    } else if (commandName === "echo") {
+        const content = interaction.options.getString("content");
+        await interaction.reply(content);
     }
-    
-  }
-  if (message.content == '!閉嘴'){
-    index = 10
-    message.channel.send('好啦,幹嘛兇人家');
-  }
 });
 
 client.login(TOKEN);
